@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title data-lang="title">Convertify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4a6cff;
+      --bg: #f0f4f8;
+      --card-bg: #fff;
+      --shadow: rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: #333;
+    }
+
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    #langSelect {
+      padding: 6px;
+      border-radius: 6px;
+      border: none;
+      font-weight: bold;
+    }
+
+    section {
+      padding: 80px 20px;
+      max-width: 900px;
+      margin: auto;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.6s ease;
+    }
+
+    section.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: var(--primary);
+    }
+
+    .converter {
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 15px 30px var(--shadow);
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .converter select,
+    input[type="file"] {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: 2px solid #ccc;
+      width: 80%;
+      max-width: 400px;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #364edb;
+    }
+
+    .preview {
+      margin-top: 20px;
+      max-width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px var(--shadow);
+    }
+
+    footer {
+      background: var(--primary);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .contact-info {
+      text-align: center;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div><strong data-lang="brand">Konverter</strong></div>
+  <nav>
+    <a href="#home" data-lang="nav_home">Početna</a>
+    <a href="#convert" data-lang="nav_convert">Konvertuj</a>
+    <a href="#about" data-lang="nav_about">O nama</a>
+    <a href="#contact" data-lang="nav_contact">Kontakt</a>
+  </nav>
+  <select id="langSelect">
+    <option value="bs">🇧🇦 Bosanski</option>
+    <option value="en">🇬🇧 English</option>
+    <option value="de">🇩🇪 Deutsch</option>
+  </select>
+</header>
+
+<section id="home">
+  <h1 data-lang="home_title">Online konverzija slika</h1>
+  <p data-lang="home_desc" style="text-align:center; max-width: 700px; margin:auto;">
+    Pretvori WebP, PNG, JPG slike jednostavno i brzo – bez instalacije.
+  </p>
+</section>
+
+<section id="convert">
+  <h2 data-lang="convert_title">Konvertuj sliku</h2>
+  <div class="converter">
+    <select id="fromFormat">
+      <option value="image/webp">WebP</option>
+      <option value="image/jpeg">JPG</option>
+      <option value="image/png">PNG</option>
+    </select>
+    <select id="toFormat">
+      <option value="image/png">PNG</option>
+      <option value="image/jpeg">JPG</option>
+      <option value="image/webp">WebP</option>
+    </select>
+    <br>
+    <input type="file" id="upload">
+    <br>
+    <button onclick="convert()" data-lang="convert_button">Konvertuj</button>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <br>
+    <img id="preview" class="preview" src="" alt="">
+  </div>
+</section>
+
+<section id="about">
+  <h2 data-lang="about_title">O nama</h2>
+  <p data-lang="about_text" style="text-align:center;">
+    Ova stranica omogućava jednostavnu konverziju slika u browseru. Ne čuvamo vaše slike.
+  </p>
+</section>
+
+<section id="contact">
+  <h2 data-lang="contact_title">Kontakt</h2>
+  <p class="contact-info" data-lang="contact_info">
+    ✉ Email: podrska@konvert.ba <br>
+    ☎ Telefon: +387 61 123 456 <br>
+    📍 Sarajevo, BiH
+  </p>
+</section>
+
+<footer>
+  <span data-lang="footer_text">&copy; 2025 Konverter - Sva prava zadržana.</span>
+</footer>
+<script>
+    // KONVERZIJA SLIKA
+    let image = new Image();
+  
+    document.getElementById('upload').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          image.src = event.target.result;
+          document.getElementById('preview').src = image.src;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  
+    function convert() {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      ctx.drawImage(image, 0, 0);
+  
+      const format = document.getElementById('toFormat').value;
+      const ext = format.split('/')[1];
+      const link = document.createElement('a');
+      link.download = `converted.${ext}`;
+      link.href = canvas.toDataURL(format);
+      link.click();
+    }
+  
+    // ANIMACIJE SEKCIJA
+    const sections = document.querySelectorAll('section');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('show');
+        }
+      });
+    }, { threshold: 0.1 });
+  
+    sections.forEach(section => observer.observe(section));
+  
+    // PROMJENA JEZIKA
+    const translations = {
+      bs: {
+        title: "Konverter slika",
+        brand: "Convertify",
+        nav_home: "Početna",
+        nav_convert: "Konvertuj",
+        nav_about: "O nama",
+        nav_contact: "Kontakt",
+        home_title: "Online konverzija slika",
+        home_desc: "Pretvori WebP, PNG, JPG slike jednostavno i brzo – bez instalacije.",
+        convert_title: "Konvertuj sliku",
+        convert_button: "Konvertuj",
+        about_title: "O nama",
+        about_text: "Ova stranica omogućava jednostavnu konverziju slika u browseru. Ne čuvamo vaše slike.",
+        contact_title: "Kontakt",
+        contact_info: "✉ Email: podrska@konvert.ba <br> ☎ Telefon: +387 61 123 456 <br> 📍 Sarajevo, BiH",
+        footer_text: "&copy; 2025 Convertify - Sva prava zadržana."
+      },
+      en: {
+        title: "Image Converter",
+        brand: "Convertify",
+        nav_home: "Home",
+        nav_convert: "Convert",
+        nav_about: "About",
+        nav_contact: "Contact",
+        home_title: "Online Image Conversion",
+        home_desc: "Convert WebP, PNG, JPG images easily and quickly – no installation.",
+        convert_title: "Convert Image",
+        convert_button: "Convert",
+        about_title: "About Us",
+        about_text: "This site allows simple image conversion in your browser. We do not store your images.",
+        contact_title: "Contact",
+        contact_info: "✉ Email: support@konvert.ba <br> ☎ Phone: +387 61 123 456 <br> 📍 Sarajevo, BiH",
+        footer_text: "&copy; 2025 Convertify - All rights reserved."
+      },
+      de: {
+        title: "Bildkonverter",
+        brand: "Convertify",
+        nav_home: "Startseite",
+        nav_convert: "Konvertieren",
+        nav_about: "Über uns",
+        nav_contact: "Kontakt",
+        home_title: "Online-Bildkonvertierung",
+        home_desc: "Konvertieren Sie WebP-, PNG- und JPG-Bilder einfach und schnell – ohne Installation.",
+        convert_title: "Bild konvertieren",
+        convert_button: "Konvertieren",
+        about_title: "Über uns",
+        about_text: "Diese Seite ermöglicht einfache Bildkonvertierung im Browser. Wir speichern Ihre Bilder nicht.",
+        contact_title: "Kontakt",
+        contact_info: "✉ Email: kontakt@konvert.ba <br> ☎ Telefon: +387 61 123 456 <br> 📍 Sarajevo, BiH",
+        footer_text: "&copy; 2025 Convertify - Alle Rechte vorbehalten."
+      }
+    };
+  
+    document.getElementById('langSelect').addEventListener('change', function () {
+      const lang = this.value;
+      document.querySelectorAll('[data-lang]').forEach(el => {
+        const key = el.getAttribute('data-lang');
+        if (translations[lang][key]) {
+          el.innerHTML = translations[lang][key];
+          if (el.tagName === 'TITLE') document.title = translations[lang][key];
+        }
+      });
+    });
+  </script>
+</body>
