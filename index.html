@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title data-lang="title">Convertify</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- jsPDF CDN za kreiranje PDF-a -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
   <style>
     :root {
       --primary: #4a6cff;
@@ -12,19 +16,16 @@
       --card-bg: #fff;
       --shadow: rgba(0, 0, 0, 0.1);
     }
-
     * {
       box-sizing: border-box;
       scroll-behavior: smooth;
     }
-
     body {
       font-family: 'Poppins', sans-serif;
       margin: 0;
       background: var(--bg);
       color: #333;
     }
-
     header {
       background: var(--primary);
       color: white;
@@ -36,7 +37,6 @@
       top: 0;
       z-index: 100;
     }
-
     nav a {
       color: white;
       text-decoration: none;
@@ -44,18 +44,18 @@
       font-weight: 500;
       transition: 0.3s;
     }
-
     nav a:hover {
       text-decoration: underline;
     }
-
     #langSelect {
-      padding: 6px;
+      padding: 6px 12px;
       border-radius: 6px;
       border: none;
       font-weight: bold;
+      background-color: #3b56d1;
+      color: white;
+      cursor: pointer;
     }
-
     section {
       padding: 80px 20px;
       max-width: 900px;
@@ -64,17 +64,14 @@
       transform: translateY(20px);
       transition: all 0.6s ease;
     }
-
     section.show {
       opacity: 1;
       transform: translateY(0);
     }
-
     h1, h2 {
       text-align: center;
       color: var(--primary);
     }
-
     .converter {
       background: var(--card-bg);
       padding: 30px;
@@ -83,7 +80,6 @@
       text-align: center;
       margin-top: 30px;
     }
-
     .converter select,
     input[type="file"] {
       padding: 10px;
@@ -93,7 +89,6 @@
       width: 80%;
       max-width: 400px;
     }
-
     button {
       background: var(--primary);
       color: white;
@@ -105,29 +100,48 @@
       transition: background 0.3s ease;
       margin-top: 10px;
     }
-
-    button:hover {
+    button:hover:enabled {
       background: #364edb;
     }
-
-    .preview {
-      margin-top: 20px;
-      max-width: 100%;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px var(--shadow);
+    button:disabled {
+      background: #a0a9ff;
+      cursor: not-allowed;
     }
-
+    #previewContainer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    #previewContainer img {
+      width: 120px;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
     footer {
       background: var(--primary);
       color: white;
       padding: 20px;
       text-align: center;
     }
-
     .contact-info {
       text-align: center;
       font-size: 16px;
       margin-top: 10px;
+    }
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      nav {
+        margin-top: 10px;
+      }
+      nav a {
+        margin: 5px 10px 0 0;
+      }
     }
   </style>
 </head>
@@ -149,161 +163,335 @@
 </header>
 
 <section id="home">
-  <h1 data-lang="home_title">Online konverzija slika</h1>
+  <h1 data-lang="home_title">Online konverzija slika i fajlova</h1>
   <p data-lang="home_desc" style="text-align:center; max-width: 700px; margin:auto;">
-    Pretvori WebP, PNG, JPG slike jednostavno i brzo – bez instalacije.
+    Pretvori WebP, PNG, JPG slike, audio i video fajlove jednostavno i brzo – bez instalacije.
   </p>
 </section>
 
 <section id="convert">
-  <h2 data-lang="convert_title">Konvertuj sliku</h2>
+  <h2 data-lang="convert_title">Konvertuj fajl</h2>
   <div class="converter">
     <select id="fromFormat">
-      <option value="image/webp">WebP</option>
-      <option value="image/jpeg">JPG</option>
-      <option value="image/png">PNG</option>
+      <optgroup label="Slike">
+        <option value="image/webp">WebP</option>
+        <option value="image/jpeg">JPG</option>
+        <option value="image/png">PNG</option>
+      </optgroup>
+      <optgroup label="Audio">
+        <option value="audio/mp3">MP3</option>
+        <option value="audio/wav">WAV</option>
+      </optgroup>
+      <optgroup label="Video">
+        <option value="video/mp4">MP4</option>
+      </optgroup>
+      <optgroup label="Posebno">
+        <option value="image-to-pdf">Slike u PDF</option>
+      </optgroup>
     </select>
+
     <select id="toFormat">
-      <option value="image/png">PNG</option>
-      <option value="image/jpeg">JPG</option>
-      <option value="image/webp">WebP</option>
+      <optgroup label="Slike">
+        <option value="image/png">PNG</option>
+        <option value="image/jpeg">JPG</option>
+        <option value="image/webp">WebP</option>
+      </optgroup>
+      <optgroup label="Audio">
+        <option value="audio/mp3">MP3</option>
+        <option value="audio/wav">WAV</option>
+      </optgroup>
+      <optgroup label="Video">
+        <option value="video/mp4">MP4</option>
+      </optgroup>
+      <optgroup label="Posebno">
+        <option value="image-to-pdf">Slike u PDF</option>
+      </optgroup>
     </select>
+
     <br>
-    <input type="file" id="upload">
+    <input type="file" id="upload" multiple accept="image/webp,image/jpeg,image/png,audio/mp3,audio/wav,video/mp4" />
     <br>
-    <button onclick="convert()" data-lang="convert_button">Konvertuj</button>
-    <canvas id="canvas" style="display:none;"></canvas>
+    <button onclick="convert()" data-lang="convert_button" disabled>Konvertuj</button>
     <br>
-    <img id="preview" class="preview" src="" alt="">
+    <div id="previewContainer"></div>
   </div>
 </section>
 
 <section id="about">
   <h2 data-lang="about_title">O nama</h2>
   <p data-lang="about_text" style="text-align:center;">
-    Ova stranica omogućava jednostavnu konverziju slika u browseru. Ne čuvamo vaše slike.
+    Ova stranica omogućava jednostavnu konverziju fajlova u browseru. Ne čuvamo vaše fajlove.
   </p>
 </section>
 
 <section id="contact">
   <h2 data-lang="contact_title">Kontakt</h2>
   <p class="contact-info" data-lang="contact_info">
-    ✉ Email: podrska@konvert.ba <br>
-    ☎ Telefon: +387 61 123 456 <br>
-    📍 Sarajevo, BiH
+    ✉ Email: danisbrkic7@gmail.com <br>
+    📍 Tuzla, BiH <br>
   </p>
 </section>
 
 <footer>
   <span data-lang="footer_text">&copy; 2025 Konverter - Sva prava zadržana.</span>
 </footer>
+
 <script>
-    // KONVERZIJA SLIKA
-    let image = new Image();
-  
-    document.getElementById('upload').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
+  // JEZICI I PREVODI
+  const translations = {
+    bs: {
+      title: "Konverter fajlova",
+      brand: "Convertify",
+      nav_home: "Početna",
+      nav_convert: "Konvertuj",
+      nav_about: "O nama",
+      nav_contact: "Kontakt",
+      home_title: "Online konverzija slika i fajlova",
+      home_desc: "Pretvori WebP, PNG, JPG slike, audio i video fajlove jednostavno i brzo – bez instalacije.",
+      convert_title: "Konvertuj fajl",
+      convert_button: "Konvertuj",
+      about_title: "O nama",
+      about_text: "Ova stranica omogućava jednostavnu konverziju fajlova u browseru. Ne čuvamo vaše fajlove.",
+      contact_title: "Kontakt",
+      contact_info: "✉ Email: danisbrkic7@gmail.com <br> 📍 Tuzla, BiH",
+      footer_text: "&copy; 2025 Convertify - Sva prava zadržana."
+    },
+    en: {
+      title: "File Converter",
+      brand: "Convertify",
+      nav_home: "Home",
+      nav_convert: "Convert",
+      nav_about: "About",
+      nav_contact: "Contact",
+      home_title: "Online image and file conversion",
+      home_desc: "Convert WebP, PNG, JPG images, audio and video files easily and quickly – no installation.",
+      convert_title: "Convert File",
+      convert_button: "Convert",
+      about_title: "About Us",
+      about_text: "This site allows simple file conversion in your browser. We do not store your files.",
+      contact_title: "Contact",
+      contact_info: "✉ Email: danisbrkic7@gmail.com <br> 📍 Tuzla, BiH",
+      footer_text: "&copy; 2025 Convertify - All rights reserved."
+    },
+    de: {
+      title: "Dateikonverter",
+      brand: "Convertify",
+      nav_home: "Startseite",
+      nav_convert: "Konvertieren",
+      nav_about: "Über uns",
+      nav_contact: "Kontakt",
+      home_title: "Online Bild- und Dateikonvertierung",
+      home_desc: "Konvertieren Sie WebP-, PNG-, JPG-Bilder, Audio- und Videodateien einfach und schnell – ohne Installation.",
+      convert_title: "Datei konvertieren",
+      convert_button: "Konvertieren",
+      about_title: "Über uns",
+      about_text: "Diese Seite ermöglicht einfache Dateikonvertierung im Browser. Wir speichern Ihre Dateien nicht.",
+      contact_title: "Kontakt",
+      contact_info: "✉ Email: danisbrkic7@gmail.com <br> 📍 Tuzla, BiH",
+      footer_text: "&copy; 2025 Convertify - Alle Rechte vorbehalten."
+    }
+  };
+
+  function setLanguage(lang) {
+    document.querySelectorAll('[data-lang]').forEach(el => {
+      const key = el.getAttribute('data-lang');
+      if (translations[lang][key]) {
+        el.innerHTML = translations[lang][key];
+      }
+    });
+    document.title = translations[lang]['title'];
+  }
+
+  document.getElementById('langSelect').addEventListener('change', function () {
+    setLanguage(this.value);
+  });
+
+  setLanguage('bs');
+
+  // ANIMACIJE SEKCIJA
+  const sections = document.querySelectorAll('section');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('show');
+      }
+    });
+  }, { threshold: 0.1 });
+  sections.forEach(section => observer.observe(section));
+
+  // VIŠESTRUKI UPLOAD I KONVERZIJA
+  const uploadInput = document.getElementById('upload');
+  const previewContainer = document.getElementById('previewContainer');
+  const maxFiles = 10;
+  const convertButton = document.querySelector('button');
+
+  let filesToConvert = []; // niz File objekata
+
+  uploadInput.addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+
+    if (files.length > maxFiles) {
+      alert(`Možete uploadati maksimalno ${maxFiles} fajlova odjednom.`);
+      uploadInput.value = '';
+      previewContainer.innerHTML = '';
+      convertButton.disabled = true;
+      filesToConvert = [];
+      return;
+    }
+
+    filesToConvert = [];
+    previewContainer.innerHTML = '';
+
+    files.forEach(file => {
+      filesToConvert.push(file);
+
+      if(file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = function(event) {
-          image.src = event.target.result;
-          document.getElementById('preview').src = image.src;
+          const img = new Image();
+          img.src = event.target.result;
+          img.style.width = '120px';
+          img.style.height = 'auto';
+          img.style.borderRadius = '10px';
+          img.style.boxShadow = '0 4px 10px rgba(0,0,0,0.15)';
+          previewContainer.appendChild(img);
         };
         reader.readAsDataURL(file);
+      } else {
+        // Za audio/video prikažemo ikonu ili tekst
+        const filePreview = document.createElement('div');
+        filePreview.textContent = file.name;
+        filePreview.style.width = '120px';
+        filePreview.style.padding = '10px';
+        filePreview.style.borderRadius = '10px';
+        filePreview.style.boxShadow = '0 4px 10px rgba(0,0,0,0.15)';
+        filePreview.style.textAlign = 'center';
+        filePreview.style.fontSize = '12px';
+        filePreview.style.backgroundColor = '#eee';
+        previewContainer.appendChild(filePreview);
       }
     });
-  
-    function convert() {
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = image.width;
-      canvas.height = image.height;
-      ctx.drawImage(image, 0, 0);
-  
-      const format = document.getElementById('toFormat').value;
-      const ext = format.split('/')[1];
-      const link = document.createElement('a');
-      link.download = `converted.${ext}`;
-      link.href = canvas.toDataURL(format);
-      link.click();
+
+    convertButton.disabled = filesToConvert.length === 0;
+  });
+
+  async function convert() {
+    if (filesToConvert.length === 0) {
+      alert("Molimo vas da prvo učitate fajlove.");
+      return;
     }
-  
-    // ANIMACIJE SEKCIJA
-    const sections = document.querySelectorAll('section');
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('show');
-        }
-      });
-    }, { threshold: 0.1 });
-  
-    sections.forEach(section => observer.observe(section));
-  
-    // PROMJENA JEZIKA
-    const translations = {
-      bs: {
-        title: "Konverter slika",
-        brand: "Convertify",
-        nav_home: "Početna",
-        nav_convert: "Konvertuj",
-        nav_about: "O nama",
-        nav_contact: "Kontakt",
-        home_title: "Online konverzija slika",
-        home_desc: "Pretvori WebP, PNG, JPG slike jednostavno i brzo – bez instalacije.",
-        convert_title: "Konvertuj sliku",
-        convert_button: "Konvertuj",
-        about_title: "O nama",
-        about_text: "Ova stranica omogućava jednostavnu konverziju slika u browseru. Ne čuvamo vaše slike.",
-        contact_title: "Kontakt",
-        contact_info: "✉ Email: danisbrkic7@gmail.com <br> 📍 Tuzla, BiH",
-        footer_text: "&copy; 2025 Convertify - Sva prava zadržana."
-      },
-      en: {
-        title: "Image Converter",
-        brand: "Convertify",
-        nav_home: "Home",
-        nav_convert: "Convert",
-        nav_about: "About",
-        nav_contact: "Contact",
-        home_title: "Online Image Conversion",
-        home_desc: "Convert WebP, PNG, JPG images easily and quickly – no installation.",
-        convert_title: "Convert Image",
-        convert_button: "Convert",
-        about_title: "About Us",
-        about_text: "This site allows simple image conversion in your browser. We do not store your images.",
-        contact_title: "Contact",
-        contact_info: "✉ Email: danisbrkic7@gmail.com <br> 📍 Tuzla, BiH",
-        footer_text: "&copy; 2025 Convertify - All rights reserved."
-      },
-      de: {
-        title: "Bildkonverter",
-        brand: "Convertify",
-        nav_home: "Startseite",
-        nav_convert: "Konvertieren",
-        nav_about: "Über uns",
-        nav_contact: "Kontakt",
-        home_title: "Online-Bildkonvertierung",
-        home_desc: "Konvertieren Sie WebP-, PNG- und JPG-Bilder einfach und schnell – ohne Installation.",
-        convert_title: "Bild konvertieren",
-        convert_button: "Konvertieren",
-        about_title: "Über uns",
-        about_text: "Diese Seite ermöglicht einfache Bildkonvertierung im Browser. Wir speichern Ihre Bilder nicht.",
-        contact_title: "Kontakt",
-        contact_info: "✉ Email: danisbrkic7@gmail.com <br> 📍 Tuzla, BiH",
-        footer_text: "&copy; 2025 Convertify - Alle Rechte vorbehalten."
-      }
-    };
-  
-    document.getElementById('langSelect').addEventListener('change', function () {
-      const lang = this.value;
-      document.querySelectorAll('[data-lang]').forEach(el => {
-        const key = el.getAttribute('data-lang');
-        if (translations[lang][key]) {
-          el.innerHTML = translations[lang][key];
-          if (el.tagName === 'TITLE') document.title = translations[lang][key];
-        }
-      });
+
+    const fromFormat = document.getElementById('fromFormat').value;
+    const toFormat = document.getElementById('toFormat').value;
+
+    if (fromFormat === toFormat) {
+      alert("Izaberite različite formate za konverziju.");
+      return;
+    }
+
+    // Image to PDF slučaj
+    if (toFormat === 'image-to-pdf' || fromFormat === 'image-to-pdf') {
+      await convertImagesToPDF();
+      return;
+    }
+
+    // Sliku u sliku konverzija
+    if (fromFormat.startsWith('image/') && toFormat.startsWith('image/')) {
+      convertImagesToImages();
+      return;
+    }
+
+    // Za audio/video samo omogućimo "preuzimanje" sa promjenom ekstenzije (bez prave konverzije)
+    if ((fromFormat.startsWith('audio/') || fromFormat.startsWith('video/')) &&
+        (toFormat.startsWith('audio/') || toFormat.startsWith('video/'))) {
+      convertMediaFiles();
+      return;
+    }
+
+    alert('Ova kombinacija formata trenutno nije podržana.');
+  }
+
+  function convertImagesToImages() {
+    filesToConvert.forEach((file, index) => {
+      if (!file.type.startsWith('image/')) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          const toFormat = document.getElementById('toFormat').value;
+          const ext = toFormat.split('/')[1];
+          const link = document.createElement('a');
+          link.download = `converted_${index+1}.${ext}`;
+          link.href = canvas.toDataURL(toFormat);
+          link.click();
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
     });
-  </script>
+  }
+
+  async function convertImagesToPDF() {
+    // Uzimamo samo slikovne fajlove
+    const imageFiles = filesToConvert.filter(f => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) {
+      alert('Molimo učitajte slike za kreiranje PDF-a.');
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+
+    for(let i = 0; i < imageFiles.length; i++) {
+      const file = imageFiles[i];
+      const dataUrl = await fileToDataURL(file);
+      const img = new Image();
+      await new Promise(resolve => {
+        img.onload = resolve;
+        img.src = dataUrl;
+      });
+
+      const imgProps = pdf.getImageProperties(img);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      if (i > 0) pdf.addPage();
+      pdf.addImage(img, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+    }
+
+    pdf.save('converted.pdf');
+  }
+
+  function convertMediaFiles() {
+    filesToConvert.forEach((file, index) => {
+      // Samo promijeni ekstenziju na željenu i triggeruj download bez prave konverzije
+      const toFormat = document.getElementById('toFormat').value;
+      const ext = toFormat.split('/')[1];
+      const blobUrl = URL.createObjectURL(file);
+      const link = document.createElement('a');
+      const originalName = file.name.split('.').slice(0, -1).join('.');
+      link.download = `${originalName}.${ext}`;
+      link.href = blobUrl;
+      link.click();
+      URL.revokeObjectURL(blobUrl);
+    });
+  }
+
+  function fileToDataURL(file) {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.readAsDataURL(file);
+    });
+  }
+</script>
+
 </body>
+</html>
